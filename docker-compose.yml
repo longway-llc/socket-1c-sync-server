@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  robot:
+    container_name: socket-server
+    build:
+      dockerfile: Dockerfile
+      context: .
+    image: socket-server
+    ports:
+    - 8080:8080
+    volumes:
+    - ./src:/app/src
+    env_file:
+      - .env

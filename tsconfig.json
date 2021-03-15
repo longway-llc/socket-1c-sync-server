@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "./build",
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "module": "commonjs",
+    "target": "es5",
+    "noUnusedParameters": true,
+    "esModuleInterop": true,
+    "lib": ["dom","es2015"]
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
