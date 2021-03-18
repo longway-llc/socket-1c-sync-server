@@ -2,7 +2,7 @@ import WebSocket from 'ws'
 
 export interface WebSocketAction {
     type: string,
-    payload: any
+    payload: unknown
 }
 
 export type WebSocketReducer = (action: WebSocketAction, socket: WebSocket) => Promise<void>
@@ -22,7 +22,7 @@ const handleAction = async (userId: string, serializedAction: string) => {
     for (const handler of store.handlers) {
         await handler(action, store.sockets[userId])
     }
-    store.sockets[userId].close(1001)
+    store.sockets[userId]?.close(1001)
 }
 
 export const createWebSocketConnection = (ws: WebSocket, userId: string): void => {
