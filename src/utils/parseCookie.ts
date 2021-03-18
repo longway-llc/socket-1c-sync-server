@@ -5,7 +5,7 @@ export type Cookies = {
 }
 
 export function parseCookies(request: IncomingMessage): Cookies {
-    const list: {[key:string]: any} = {}
+    const list: {[key:string]: string} = {}
     const rc = request.headers.cookie
 
     rc && rc.split(';').forEach((cookie) => {
