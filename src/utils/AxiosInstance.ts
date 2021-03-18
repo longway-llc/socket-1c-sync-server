@@ -12,7 +12,7 @@ export default axios.create({
 
 
     validateStatus: status => status < 400,
-    baseURL: process.env.DATABASE_URL ?? 'http://localhost',
+    baseURL: process.env.BASE_URL ?? 'http://localhost',
     //follow up to 10 HTTP 3xx redirects
     maxRedirects: 10,
 
