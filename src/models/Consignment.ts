@@ -11,7 +11,7 @@ export const consignmentSchema = new Schema({
     productionDate: {type: Date, default: null},
     validUntil: {type: Date, default: null},
     placements: [{
-        kind: "ComponentPlacementPlacement",
+        kind: {type: String, default: "ComponentPlacementPlacement"},
         ref: {type: Schema.Types.ObjectId, ref: "Placement"}
     }],
     created_by: {type: Schema.Types.ObjectId, default: null},
@@ -28,7 +28,7 @@ export interface ConsignmentDocument extends Document {
     placements: [{
         kind: "ComponentPlacementPlacement",
         ref: PlacementDocument['_id']
-    }]
+    }?]
     created_by: ObjectId | null
     updated_by: ObjectId | null
     createdAt: Date | null

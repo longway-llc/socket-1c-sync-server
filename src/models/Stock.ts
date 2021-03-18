@@ -9,7 +9,7 @@ export const stockSchema = new Schema({
 }, {timestamps: true})
 
 export interface StockDocument extends Document {
-    name: number,
+    name: string,
     created_by: ObjectId | null
     updated_by: ObjectId | null
     createdAt: Date

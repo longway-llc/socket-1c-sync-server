@@ -1,4 +1,5 @@
-import mongoose, {Document, model, ObjectId} from "mongoose"
+import mongoose, {Document, model} from "mongoose"
+import {StockDocument} from "./Stock";
 
 const Schema = mongoose.Schema;
 
@@ -9,7 +10,7 @@ export const placementSchema = new Schema({
 
 export interface PlacementDocument extends Document {
     balance: number,
-    stock: ObjectId | null
+    stock: StockDocument['_id']
 }
 
 const Placement = model<PlacementDocument>('Placement', placementSchema, 'components_placement_placements')
