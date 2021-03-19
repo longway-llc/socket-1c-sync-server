@@ -1,5 +1,5 @@
 **/node_modules/**
-**/logs/**
+logs
 dist
 build
 .env
@@ -10,6 +10,7 @@ build
 .dockerignore
 Dockerfile
 docker-compose.yml
+docker-compose.production.yml
 
 *.md
 !README.md
