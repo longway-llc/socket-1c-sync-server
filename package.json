@@ -8,8 +8,8 @@
     "dev": "nodemon src/index.ts",
     "lint": "eslint . --ext .ts",
     "lint-and-fix": "eslint . --ext .ts --fix",
-    "build": "yarn lint && tsc",
-    "start": "NODE_ENV=production yarn build && node dist/index.js"
+    "build": "NODE_ENV=production yarn lint-and-fix && tsc",
+    "start": "node dist/index.js"
   },
   "nodemonConfig": {
     "legacyWatch": true,
