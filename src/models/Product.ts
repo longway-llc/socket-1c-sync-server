@@ -22,7 +22,9 @@ export const productScheme = new Schema({
     code_1c_uom: String,
     created_by: {type: Schema.Types.ObjectId, default: null},
     updated_by: {type: Schema.Types.ObjectId, default: null},
-    published_at: {type: Date, default: null}
+    published_at: {type: Date, default: null},
+    sync1cDisplay: {type: Boolean, default: true},
+    deletedFromSearch: {type: Boolean, default: false}
 }, {timestamps: true})
 
 export interface ProductDocument extends Document {
@@ -46,7 +48,9 @@ export interface ProductDocument extends Document {
     updated_by: ObjectId | null
     createdAt: Date
     updatedAt: Date
-    published_at: Date | null
+    published_at: Date | null,
+    sync1cDisplay: Boolean
+    deletedFromSearch: Boolean
 }
 
 

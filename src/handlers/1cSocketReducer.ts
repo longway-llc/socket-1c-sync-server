@@ -1,7 +1,7 @@
 import {WebSocketReducer} from "./rootSocketReducer";
 import WebSocket from "ws";
 import moment from "moment-timezone";
-import AxiosInstance from "../utils/AxiosInstance";
+import {AxiosInstance1c, AxiosInstanceApi} from "../utils/AxiosInstance";
 import Product, {ProductDocument} from "../models/Product";
 import Brand, {BrandDocument} from "../models/Brand";
 import Group from "../models/Group";
@@ -17,8 +17,9 @@ type ФормаВыпуска = [{
 }]
 
 type ХарактеристикаНоменклатуры = [{
-    "Свойство": "P/N" | "Description" | "UOM" | "Color" | "MFG" | "Brand"
+    "Свойство": "P/N" | "Description" | "UOM" | "Color" | "MFG" | "Brand" | "отображать на сайте"
     "Значение": string
+    "Опция": boolean
 }]
 
 type Группа = "Abrasive" |
@@ -118,7 +119,7 @@ const updateStocks1c = async (newData: OneCStocksResponse): Promise<number> => {
         }
         return insertingStocks.length
     } catch (e) {
-        log(e, "error")
+        await log(e, "error")
         throw e
     }
 }
@@ -144,7 +145,7 @@ const updateBrands1c = async (newData: OneCProductsResponse): Promise<number> =>
         }
         return insertingBrands.length
     } catch (e) {
-        log(e.message, "error")
+        await log(e.message, "error")
         throw e
     }
 }
@@ -178,7 +179,9 @@ const updateProductsData = async (products1c: OneCProductsResponse): Promise<num
                         group: groupId,
                         code_1c: product.КодНоменклатуры,
                         code_1c_uom: product.КодФормыВыпуска,
-                        published_at: new Date()
+                        published_at: null,
+                        sync1cDisplay: true,
+                        deletedFromSearch: true
                     })
                 )
             }
@@ -186,7 +189,7 @@ const updateProductsData = async (products1c: OneCProductsResponse): Promise<num
         await Product.insertMany(insertedNewProducts)
         return insertedNewProducts.length
     } catch (e) {
-        log(e, "error")
+        await log(e, "error")
         throw e
     }
 }
@@ -219,7 +222,7 @@ const getNewPlacementsForConsignment = async (consignment: ConsignmentDocument, 
         }
         return placements
     } catch (e) {
-        log(e, "error")
+        await log(e, "error")
         throw e
     }
 }
@@ -255,7 +258,6 @@ const addNewConsignments = async (remainsOfGoods: OneCRemainsOfGoodsResponse): P
                     name: consignment1c.НаименованиеПартии,
                     productionDate: productionDate && new Date(productionDate),
                     validUntil: validUntil && new Date(validUntil),
-                    published_at: new Date(), // время публикации по умолчанию выставляется текущим временем
                     placements: []
                 })
                 // добавляем в массив
@@ -263,12 +265,12 @@ const addNewConsignments = async (remainsOfGoods: OneCRemainsOfGoodsResponse): P
             }
         }
         // вставляем новые партии
-        if (insertConsignments.length > 0){
+        if (insertConsignments.length > 0) {
             await Consignment.insertMany(insertConsignments)
         }
         return insertConsignments.length
     } catch (e) {
-        log(e, "error")
+        await log(e, "error")
         throw e
     }
 }
@@ -288,12 +290,11 @@ const deleteEmptyConsignments = async (emptyConsignments: OneCConsignmentsRespon
                     await Placement.findOneAndDelete({_id: placement?.ref})
                 }
             }
-
             deletedCount++
         }
         return deletedCount
     } catch (e) {
-        log(e, "error")
+        await log(e, "error")
         throw e
     }
 }
@@ -310,7 +311,7 @@ const updateConsignmentsData = async (remainsOfGoods: OneCRemainsOfGoodsResponse
         deletedCount = await deleteEmptyConsignments(emptyConsignments)
         return {insertedCount, deletedCount}
     } catch (e) {
-        log(e, "error")
+        await log(e, "error")
         throw e
     }
 }
@@ -344,24 +345,52 @@ const updatePlacementData = async (remainsOfGoods: OneCRemainsOfGoodsResponse): 
             await consignment.save()
         }
     } catch (e) {
-        log(e, "error")
+        await log(e, "error")
         throw e
     }
 }
+
+/**
+ * Обновляет отображение в поиске
+ * */
+const updatePublishData = async (productsData: OneCProductsResponse): Promise<void> => {
+    try {
+        const dbProducts = await Product.find()
+        for (const product of productsData) {
+            const displayed = product.ХарактеристикаНоменклатуры.find(c => c.Свойство == "отображать на сайте")?.Опция
+            const dbProduct = dbProducts.find(p => p.code_1c == product.КодНоменклатуры && p.code_1c_uom == product.КодФормыВыпуска)
+            if (displayed && dbProduct && dbProduct?.sync1cDisplay) {
+                await AxiosInstanceApi.put(`products/${dbProduct.id}`,
+                    {deletedFromSearch: false, published_at: new Date()},
+                    {headers: {authorization: `Bearer ${process.env.API_TOKEN}`}})
+            } else {
+                if (dbProduct?.sync1cDisplay && dbProduct.published_at) {
+                    await AxiosInstanceApi.put(`products/${dbProduct.id}`,
+                        {deletedFromSearch: true, published_at: null},
+                        {headers: {authorization: `Bearer ${process.env.API_TOKEN}`}})
+                }
+            }
+        }
+    } catch (e) {
+        await log(e, "error")
+        throw e
+    }
+}
+
 const syncProducts1c = async (ws: WebSocket) => {
     ws.send(t`Началась синхронизация с сервером 1С`)
     try {
         // ============= Получаем все данные из 1С по HTTP ========================
-        const {data: productsData} = await AxiosInstance.get<OneCProductsResponse>(`/products`)
+        const {data: productsData} = await AxiosInstance1c.get<OneCProductsResponse>(`/products`)
         ws.send(t`Список номенклатуры доставлен из 1С`)
 
-        const {data: consignmentsData} = await AxiosInstance.get<OneCConsignmentsResponse>(`/consignments`)
+        const {data: consignmentsData} = await AxiosInstance1c.get<OneCConsignmentsResponse>(`/consignments`)
         ws.send(t`Список партий доставлен из 1С`)
 
-        const {data: remainsOfGoods} = await AxiosInstance.get<OneCRemainsOfGoodsResponse>(`/remainsOfGoods`)
+        const {data: remainsOfGoods} = await AxiosInstance1c.get<OneCRemainsOfGoodsResponse>(`/remainsOfGoods`)
         ws.send(t`Список остатков на складах из 1С`)
 
-        const {data: stocks} = await AxiosInstance.get<OneCStocksResponse>(`/stocks`)
+        const {data: stocks} = await AxiosInstance1c.get<OneCStocksResponse>(`/stocks`)
         ws.send(t`Список складов доставлен из 1С`)
         // ========================================================================
 
@@ -397,6 +426,13 @@ const syncProducts1c = async (ws: WebSocket) => {
         ws.send(t`Обновление баланса успешно завершено`)
         // ========================================================================
 
+
+        // ===================== Обновление индекса публикации ====================
+        ws.send(t`Началось обновление поискового индекса`)
+        await updatePublishData(productsData)
+        ws.send(t`Поисковый индекс обновлен`)
+        // ========================================================================
+
         ws.send(t`Синхронизация продуктов успешно завершена!`)
     } catch (e) {
         log(e, "error")
@@ -408,7 +444,7 @@ const syncProducts1c = async (ws: WebSocket) => {
 // const syncCustomers1c = async (ws: WebSocket, {INN, companyName, personName}) => {
 //     try {
 //         ws.send(t`Началась синхронизация с сервером 1С`)
-//         const {data} = await AxiosInstance.get<OneCCustomersResponse>(`${config.onecEndpoint}/customers`, {validateStatus: status => status < 400})
+//         const {data} = await AxiosInstance1с.get<OneCCustomersResponse>(`${config.onecEndpoint}/customers`, {validateStatus: status => status < 400})
 //         ws.send(t`Данные доставлены из 1С`)
 //         ws.send(t`Начало обновления пользователей`)
 //
