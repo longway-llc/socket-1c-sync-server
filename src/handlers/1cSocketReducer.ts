@@ -179,7 +179,6 @@ const updateProductsData = async (products1c: OneCProductsResponse): Promise<num
                         group: groupId,
                         code_1c: product.КодНоменклатуры,
                         code_1c_uom: product.КодФормыВыпуска,
-                        published_at: null,
                         sync1cDisplay: true,
                         deletedFromSearch: true
                     })
@@ -361,12 +360,12 @@ const updatePublishData = async (productsData: OneCProductsResponse): Promise<vo
             const dbProduct = dbProducts.find(p => p.code_1c == product.КодНоменклатуры && p.code_1c_uom == product.КодФормыВыпуска)
             if (displayed && dbProduct && dbProduct?.sync1cDisplay) {
                 await AxiosInstanceApi.put(`products/${dbProduct.id}`,
-                    {deletedFromSearch: false, published_at: new Date()},
+                    {deletedFromSearch: false},
                     {headers: {authorization: `Bearer ${process.env.API_TOKEN}`}})
             } else {
-                if (dbProduct?.sync1cDisplay && dbProduct.published_at) {
+                if (dbProduct?.sync1cDisplay) {
                     await AxiosInstanceApi.put(`products/${dbProduct.id}`,
-                        {deletedFromSearch: true, published_at: null},
+                        {deletedFromSearch: true},
                         {headers: {authorization: `Bearer ${process.env.API_TOKEN}`}})
                 }
             }
