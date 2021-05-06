@@ -356,14 +356,14 @@ const updatePublishData = async (productsData: OneCProductsResponse): Promise<vo
     try {
         const dbProducts = await Product.find()
         for (const product of productsData) {
-            const displayed = product.ХарактеристикаНоменклатуры.find(c => c.Свойство == "отображать на сайте")?.Опция
+            const displayedIn1c = product.ХарактеристикаНоменклатуры.find(c => c.Свойство == "отображать на сайте")?.Опция
             const dbProduct = dbProducts.find(p => p.code_1c == product.КодНоменклатуры && p.code_1c_uom == product.КодФормыВыпуска)
-            if (displayed && dbProduct && dbProduct?.sync1cDisplay) {
+            if (displayedIn1c && dbProduct?.sync1cDisplay) {
                 await AxiosInstanceApi.put(`products/${dbProduct.id}`,
                     {deletedFromSearch: false},
                     {headers: {authorization: `Bearer ${process.env.API_TOKEN}`}})
             } else {
-                if (dbProduct?.sync1cDisplay) {
+                if (dbProduct?.sync1cDisplay && (!dbProduct.deletedFromSearch != Boolean(displayedIn1c))) {
                     await AxiosInstanceApi.put(`products/${dbProduct.id}`,
                         {deletedFromSearch: true},
                         {headers: {authorization: `Bearer ${process.env.API_TOKEN}`}})
