@@ -257,6 +257,7 @@ const addNewConsignments = async (remainsOfGoods: OneCRemainsOfGoodsResponse): P
                     name: consignment1c.НаименованиеПартии,
                     productionDate: productionDate && new Date(productionDate),
                     validUntil: validUntil && new Date(validUntil),
+                    published_at: new Date(),
                     placements: []
                 })
                 // добавляем в массив
